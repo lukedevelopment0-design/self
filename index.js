@@ -69,9 +69,15 @@ createServer(async (req, res) => {
         sendJson(res, 503, { error: "Not logged in yet.", channels: [] });
         return;
       }
+      let channels = [];
+      try {
+        channels = await listDmChannels();
+      } catch (err) {
+        console.error("listDmChannels:", err.message);
+      }
       sendJson(res, 200, {
         account: { id: client.user.id, tag: client.user.tag },
-        channels: await listDmChannels(),
+        channels,
       });
       return;
     }
