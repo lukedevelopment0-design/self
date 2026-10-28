@@ -11,7 +11,7 @@ import {
   setClient,
   listDmChannels,
 } from "./lib/purge.js";
-import { loadStore, getDataPath } from "./lib/store.js";
+import { loadStore, getDataPath, flushStore } from "./lib/store.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = Number(process.env.PORT || 8080);
@@ -131,6 +131,13 @@ client.login(TOKEN).catch((err) => {
 });
 
 process.on("SIGTERM", () => {
+  flushStore();
+  client.destroy();
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  flushStore();
   client.destroy();
   process.exit(0);
 });

@@ -79,7 +79,8 @@
       <p class="hint">Excluded conversations are not scanned and nothing is deleted there.</p>
 
       <div class="actions">
-        <button type="button" id="startBtn">Start purge</button>
+        <button type="button" id="startBtn">Start / continue purge</button>
+        <button type="button" id="rescanBtn" class="secondary">Restart scan (keep queue)</button>
         <button type="button" id="stopBtn" class="danger secondary" disabled>Cancel</button>
         <button type="button" id="refreshBtn" class="secondary">Refresh</button>
       </div>
@@ -155,19 +156,27 @@
         $("account").textContent = e.message;
       }
     }
+    async function startPurge(forceRescan) {
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+      apply(await api("/api/purge", {
+        method: "POST",
+        body: JSON.stringify({
+          mode,
+          channelId: $("singleChannel").value.trim() || undefined,
+          userId: $("singleUser").value.trim() || undefined,
+          excludeChannelIds: splitIds($("excludeChannels").value),
+          excludeUserIds: splitIds($("excludeUsers").value),
+          forceRescan,
+        }),
+      }));
+    }
     $("startBtn").onclick = async () => {
+      try { await startPurge(false); } catch (e) { alert(e.message); }
+    };
+    $("rescanBtn").onclick = async () => {
       try {
-        const mode = document.querySelector('input[name="mode"]:checked').value;
-        apply(await api("/api/purge", {
-          method: "POST",
-          body: JSON.stringify({
-            mode,
-            channelId: $("singleChannel").value.trim() || undefined,
-            userId: $("singleUser").value.trim() || undefined,
-            excludeChannelIds: splitIds($("excludeChannels").value),
-            excludeUserIds: splitIds($("excludeUsers").value),
-          }),
-        }));
+        if (!confirm("Reset scan progress but keep queued messages?")) return;
+        await startPurge(true);
       } catch (e) { alert(e.message); }
     };
     $("stopBtn").onclick = async () => { try { apply(await api("/api/cancel", { method: "POST" })); } catch (e) { alert(e.message); } };

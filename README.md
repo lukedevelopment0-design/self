@@ -13,7 +13,9 @@ Web dashboard to **delete your own messages** in Discord DMs and group chats, us
 3. Copy `.env.example` → `.env` and set **`TOKEN`** (user token).
 4. `npm start` → open `http://localhost:8080`
 
-Railway: set `TOKEN`, optional `DATA_DIR=/data` with a volume for resume data.
+Railway: set `TOKEN`, and **`DATA_DIR=/data` on a mounted volume** so `purge.json` survives redeploys (ephemeral disk wipes `./data`).
+
+Progress is flushed to disk after **every queue change, scan cursor update, and delete batch**. Failed deletes stay in the queue; **Start / continue purge** keeps scan progress unless you use **Restart scan**.
 
 ## Features
 
