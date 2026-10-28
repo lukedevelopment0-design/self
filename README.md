@@ -29,7 +29,7 @@ Railway: set `TOKEN`, optional `DATA_DIR=/data` with a volume for resume data.
 | Action | Endpoint | Default delay |
 |--------|----------|-----------------|
 | Read history | `GET /channels/{id}/messages` | **6.5–7.5s** random between pages (`SCAN_PAGE_MIN_MS` / `SCAN_PAGE_MAX_MS`) |
-| Bulk delete | `POST …/bulk-delete` (≤14 days, **bots only** — often **fails** on user tokens) | **1.1s** between attempts; falls back to single delete |
+| Bulk delete | `POST …/bulk-delete` (≤14 days, **bots only** — often **fails** on user tokens) | Tried when ≥2 recent msgs on a page; then **1.01–1.25s** before next step |
 | Single delete | `DELETE …/messages/{id}` | **1.01–1.25s** random (`DELETE_MIN_MS` / `DELETE_MAX_MS`) |
 
 On **429**, the library should honor `retry_after`; these delays reduce how often you hit limits.
