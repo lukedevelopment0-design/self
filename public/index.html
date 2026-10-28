@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Self — DM purge</title>
+  <style>
+    :root { color-scheme: dark; --bg:#0f1117; --panel:#1a1d27; --border:#2a2f3d; --text:#e8eaef; --muted:#9aa3b5; --accent:#5865f2; --ok:#3ba55d; --warn:#faa61a; --err:#ed4245; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui,sans-serif; background:var(--bg); color:var(--text); line-height:1.45; }
+    main { max-width: 760px; margin: 0 auto; padding: 2rem 1.25rem 3rem; }
+    h1 { font-size:1.45rem; margin:0 0 .25rem; }
+    h2 { font-size:1rem; margin:1.25rem 0 .5rem; color:var(--muted); font-weight:600; }
+    .sub { color:var(--muted); margin-bottom:1.25rem; font-size:.92rem; }
+    .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:1.15rem; margin-bottom:1rem; }
+    label { display:block; font-size:.82rem; color:var(--muted); margin-bottom:.35rem; }
+    input, textarea, select, button { width:100%; font:inherit; padding:.6rem .7rem; border-radius:8px; border:1px solid var(--border); background:#12151c; color:var(--text); }
+    textarea { min-height:3.5rem; resize:vertical; }
+    .row { margin-bottom:.75rem; }
+    .actions { display:flex; gap:.5rem; flex-wrap:wrap; margin-top:1rem; }
+    button { width:auto; cursor:pointer; background:var(--accent); border:none; font-weight:600; }
+    button.secondary { background:#2b3040; }
+    button.danger { background:#8b2c2e; }
+    button:disabled { opacity:.5; cursor:not-allowed; }
+    .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:.5rem; font-size:.88rem; }
+    @media (min-width:520px){ .stats { grid-template-columns:repeat(3,1fr); } }
+    .stat { background:#12151c; border-radius:8px; padding:.55rem .65rem; }
+    .stat b { display:block; font-size:1.05rem; }
+    .stat span { color:var(--muted); font-size:.75rem; }
+    .phase { font-weight:600; text-transform:capitalize; }
+    .phase.done { color:var(--ok); }
+    .phase.error, .phase.cancelled { color:var(--err); }
+    .phase.scanning, .phase.deleting, .phase.paused { color:var(--warn); }
+    #log { font-family:ui-monospace,monospace; font-size:.76rem; max-height:260px; overflow:auto; white-space:pre-wrap; color:var(--muted); margin:0; }
+    .hint { color:var(--muted); font-size:.82rem; margin-top:.35rem; }
+    .mode { display:flex; gap:1rem; margin:.5rem 0; }
+    .mode label { display:flex; align-items:center; gap:.35rem; color:var(--text); cursor:pointer; }
+    .mode input { width:auto; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Self — delete your DM messages</h1>
+    <p class="sub">Uses your account token via <a href="https://github.com/aiko-chan-ai/discord.js-selfbot-v13" style="color:#8ea1ff">discord.js-selfbot-v13</a>. Only <strong>your</strong> messages are removed. ≤14 days may bulk-delete if Discord allows; otherwise one-by-one with rate limits.</p>
+
+    <div class="card">
+      <p class="hint" id="account">Connecting…</p>
+
+      <h2>Mode</h2>
+      <div class="mode">
+        <label><input type="radio" name="mode" value="all" checked /> All DMs &amp; group chats</label>
+        <label><input type="radio" name="mode" value="single" /> Single conversation</label>
+      </div>
+
+      <div id="singleFields" style="display:none">
+        <div class="row">
+          <label for="singleChannel">DM channel ID (optional)</label>
+          <input id="singleChannel" placeholder="Channel snowflake" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="singleUser">Or other user ID (opens 1:1 DM)</label>
+          <input id="singleUser" placeholder="User snowflake" autocomplete="off" />
+        </div>
+        <div class="row">
+          <label for="dmPick">Pick from your DMs</label>
+          <select id="dmPick"><option value="">—</option></select>
+        </div>
+      </div>
+
+      <h2>Exclusions</h2>
+      <div class="row">
+        <label for="excludeChannels">Exclude channel IDs (group DMs / DM threads)</label>
+        <input id="excludeChannels" placeholder="Comma or space separated" autocomplete="off" />
+      </div>
+      <div class="row">
+        <label for="excludeUsers">Exclude user IDs (skip 1:1 DMs with these people)</label>
+        <input id="excludeUsers" placeholder="Comma or space separated" autocomplete="off" />
+      </div>
+      <p class="hint">Excluded conversations are not scanned and nothing is deleted there.</p>
+
+      <div class="actions">
+        <button type="button" id="startBtn">Start purge</button>
+        <button type="button" id="stopBtn" class="danger secondary" disabled>Cancel</button>
+        <button type="button" id="refreshBtn" class="secondary">Refresh</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="phase" id="phase">idle</div>
+      <p><strong>ETA:</strong> <span id="eta">—</span></p>
+      <div class="stats">
+        <div class="stat"><b id="channels">0/0</b><span>Channels scanned</span></div>
+        <div class="stat"><b id="queue">0</b><span>Queued (saved)</span></div>
+        <div class="stat"><b id="delB">0</b><span>Deleted ≤14d</span></div>
+        <div class="stat"><b id="delO">0</b><span>Deleted older</span></div>
+        <div class="stat"><b id="err">0</b><span>Errors</span></div>
+      </div>
+      <p class="hint" id="current">—</p>
+    </div>
+
+    <div class="card">
+      <label>Log (latest 100)</label>
+      <pre id="log"></pre>
+    </div>
+  </main>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    async function api(path, opts) {
+      const res = await fetch(path, { headers: { "Content-Type": "application/json" }, ...opts });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || res.statusText);
+      return data;
+    }
+    function splitIds(v) {
+      return v.trim() ? v.trim().split(/[\s,]+/).map((s) => s.trim()).filter(Boolean) : [];
+    }
+    function apply(s) {
+      $("phase").textContent = s.phase + (s.running ? " (running)" : "");
+      $("phase").className = "phase " + s.phase;
+      $("eta").textContent = s.etaLabel || "—";
+      $("channels").textContent = `${s.channelsDone}/${s.channelsTotal}`;
+      $("queue").textContent = s.queuePending ?? 0;
+      $("delB").textContent = s.deletedBulk;
+      $("delO").textContent = s.deletedOld;
+      $("err").textContent = s.deleteErrors;
+      $("current").textContent = s.currentChannel ? s.currentChannel.name : (s.error || s.accountTag || "—");
+      $("log").textContent = (s.log || []).slice(0, 100).join("\n");
+      $("startBtn").disabled = s.running;
+      $("stopBtn").disabled = !s.running;
+    }
+    function syncModeUi() {
+      const mode = document.querySelector('input[name="mode"]:checked')?.value || "all";
+      $("singleFields").style.display = mode === "single" ? "block" : "none";
+    }
+    document.querySelectorAll('input[name="mode"]').forEach((el) => {
+      el.addEventListener("change", syncModeUi);
+    });
+    syncModeUi();
+    $("dmPick").addEventListener("change", () => {
+      if ($("dmPick").value) $("singleChannel").value = $("dmPick").value;
+    });
+    async function loadDms() {
+      try {
+        const { account, channels } = await api("/api/dms");
+        $("account").textContent = account ? `Logged in as ${account.tag} (${account.id})` : "Not ready";
+        const sel = $("dmPick");
+        sel.innerHTML = '<option value="">— pick DM —</option>';
+        for (const c of channels) {
+          const o = document.createElement("option");
+          o.value = c.id;
+          o.textContent = `[${c.type}] ${c.name} (${c.id})`;
+          sel.appendChild(o);
+        }
+      } catch (e) {
+        $("account").textContent = e.message;
+      }
+    }
+    $("startBtn").onclick = async () => {
+      try {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        apply(await api("/api/purge", {
+          method: "POST",
+          body: JSON.stringify({
+            mode,
+            channelId: $("singleChannel").value.trim() || undefined,
+            userId: $("singleUser").value.trim() || undefined,
+            excludeChannelIds: splitIds($("excludeChannels").value),
+            excludeUserIds: splitIds($("excludeUsers").value),
+          }),
+        }));
+      } catch (e) { alert(e.message); }
+    };
+    $("stopBtn").onclick = async () => { try { apply(await api("/api/cancel", { method: "POST" })); } catch (e) { alert(e.message); } };
+    $("refreshBtn").onclick = () => api("/api/status").then(apply);
+    loadDms();
+    api("/api/status").then(apply).catch(() => {});
+    setInterval(() => api("/api/status").then(apply).catch(() => {}), 2000);
+  </script>
+</body>
+</html>
