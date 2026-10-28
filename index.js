@@ -2,7 +2,7 @@ import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
-import { Client } from "discord.js-selfbot-v13";
+import { Client } from "./lib/discord-self.js";
 import {
   cancelPurgeJob,
   getJobState,

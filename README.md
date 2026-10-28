@@ -4,6 +4,8 @@ Web dashboard to **delete your own messages** in Discord DMs and group chats, us
 
 > **Warning:** Automating a user account violates [Discord’s Terms of Service](https://discord.com/terms) and can get the account banned. Use at your own risk. Never commit your token.
 
+**Production:** [https://self-production-c86a.up.railway.app](https://self-production-c86a.up.railway.app)
+
 ## Setup
 
 1. Clone [github.com/lukedevelopment0-design/self](https://github.com/lukedevelopment0-design/self) (or your fork).
