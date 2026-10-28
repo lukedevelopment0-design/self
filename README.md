@@ -21,14 +21,14 @@ Railway: set `TOKEN`, optional `DATA_DIR=/data` with a volume for resume data.
 - **Single conversation** — target a **channel ID** or **user ID** (1:1 DM).
 - **Exclude channel IDs** — skip group DMs or specific DM channels.
 - **Exclude user IDs** — skip 1:1 DMs with those people.
-- **Persistent queue** — `data/purge.json` (compact `messageId,channelId,young` rows); auto-resume after restart.
+- **Persistent queue** — `data/purge.json` (compact `messageId,channelId,young` rows); deletes **as each page is scanned**; failed deletes stay queued; auto-resume after restart.
 - Only deletes messages **sent by your account**.
 
 ## Rate limits (conservative defaults)
 
 | Action | Endpoint | Default delay |
 |--------|----------|-----------------|
-| Read history | `GET /channels/{id}/messages` | **6.01s** between pages (`SCAN_PAGE_DELAY_MS`) |
+| Read history | `GET /channels/{id}/messages` | **6.5–7.5s** random between pages (`SCAN_PAGE_MIN_MS` / `SCAN_PAGE_MAX_MS`) |
 | Bulk delete | `POST …/bulk-delete` (≤14 days, **bots only** — often **fails** on user tokens) | **1.1s** between attempts; falls back to single delete |
 | Single delete | `DELETE …/messages/{id}` | **1.01–1.25s** random (`DELETE_MIN_MS` / `DELETE_MAX_MS`) |
 
