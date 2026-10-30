@@ -23,7 +23,7 @@ Progress is flushed to disk after **every queue change, scan cursor update, and 
 - **Single conversation** — target a **channel ID** or **user ID** (1:1 DM).
 - **Exclude channel IDs** — skip group DMs or specific DM channels.
 - **Exclude user IDs** — skip 1:1 DMs with those people.
-- **Persistent queue** — `data/purge.json` (compact `messageId,channelId,young` rows); deletes **as each page is scanned**; failed deletes stay queued; auto-resume after restart.
+- **Persistent data** — `purge.json` keeps **`f`** (every message ever found, never removed) and **`q`** (still to delete). **`targets`** lists all single-mode conversations you added. Switching to a **new user ID merges** into targets without wiping prior data.
 - Only deletes messages **sent by your account**.
 
 ## Rate limits (conservative defaults)

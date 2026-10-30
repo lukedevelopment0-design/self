@@ -79,6 +79,7 @@
       <p class="hint">Excluded conversations are not scanned and nothing is deleted there.</p>
 
       <div class="actions">
+        <p class="hint">Adding a new user/channel in single mode <strong>keeps</strong> queue, scan progress, and the permanent found log.</p>
         <button type="button" id="startBtn">Start / continue purge</button>
         <button type="button" id="rescanBtn" class="secondary">Restart scan (keep queue)</button>
         <button type="button" id="stopBtn" class="danger secondary" disabled>Cancel</button>
@@ -91,7 +92,9 @@
       <p><strong>ETA:</strong> <span id="eta">—</span></p>
       <div class="stats">
         <div class="stat"><b id="channels">0/0</b><span>Channels scanned</span></div>
-        <div class="stat"><b id="queue">0</b><span>Queued (saved)</span></div>
+        <div class="stat"><b id="queue">0</b><span>Queued (to delete)</span></div>
+        <div class="stat"><b id="foundArc">0</b><span>Found (permanent log)</span></div>
+        <div class="stat"><b id="targets">0</b><span>Saved conversations</span></div>
         <div class="stat"><b id="delB">0</b><span>Deleted ≤14d</span></div>
         <div class="stat"><b id="delO">0</b><span>Deleted older</span></div>
         <div class="stat"><b id="err">0</b><span>Errors</span></div>
@@ -121,6 +124,8 @@
       $("eta").textContent = s.etaLabel || "—";
       $("channels").textContent = `${s.channelsDone}/${s.channelsTotal}`;
       $("queue").textContent = s.queuePending ?? 0;
+      $("foundArc").textContent = s.foundArchived ?? 0;
+      $("targets").textContent = (s.targets && s.targets.length) || 0;
       $("delB").textContent = s.deletedBulk;
       $("delO").textContent = s.deletedOld;
       $("err").textContent = s.deleteErrors;
